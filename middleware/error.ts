@@ -25,6 +25,7 @@ const ErrorMiddleware = (
   // Invalid token error
   if (err.name === 'JsonWebTokenError') {
     const message = `Invalid token. Please provide a valid token`;
+    console.log('INVALID TOKEN')
     err = new ErrorHandler(message, 401);
   }
 
@@ -36,7 +37,7 @@ const ErrorMiddleware = (
 
   res.status(err.statusCode).json({
     success: false,
-    message: err.mesage
+    message: err.message
   });
 };
 
