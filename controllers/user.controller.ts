@@ -7,6 +7,7 @@ import User, { IUser } from '../models/user.model';
 import ErrorHandler from '../utils/ErrorHandler';
 import path from 'path';
 import sendMail from '../utils/sendMail';
+import { sendToken } from '../utils/jwt';
 
 interface IRegistrationBody {
   name: string;
@@ -75,7 +76,7 @@ export const createActivationToken = (user: any): IActivationToken => {
     },
     process.env.ACTIVATION_SECRET as Secret,
     {
-      expiresIn: '10m'
+      expiresIn: '5m'
     }
   );
 
@@ -116,6 +117,51 @@ export const activateUser = catchAsyncErrors(
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+interface ILoginRequest {
+  email: string;
+  password: string;
+}
+
+export const loginUser = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body as ILoginRequest;
+
+      if (!email || !password)
+        return next(new ErrorHandler('Email and password required', 400));
+
+      const user = await User.findOne({ email }).select('+password');
+
+      if (!user)
+        return next(new ErrorHandler('Invalid email or password', 401));
+
+      const passwordIsCorrect = await user.comparePassword(password);
+
+      if (!passwordIsCorrect)
+        return next(new ErrorHandler('Invalid email or password', 401));
+
+      sendToken(user, 200, res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+export const logoutUser = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.cookie('access_token', '', { maxAge: 1 });
+      res.cookie('refresh_token', '', { maxAge: 1 });
+      res.status(200).json({
+        success: true,
+        message: 'Logged out successfully!'
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400))
     }
   }
 );
