@@ -231,7 +231,34 @@ export const updateAccessToken = catchAsyncErrors(
 export const getUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      getUserById(req.user?._id, res)
+      getUserById(req.user?._id, res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// social authentication
+interface ISocialAuthBody {
+  name: string;
+  email: string;
+  avatar: string;
+}
+
+export const socialAuth = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name, email, avatar } = req.body as ISocialAuthBody;
+
+      // if the does not exist, create a new user, else signin
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        const newUser = await User.create({ name, email, avatar })
+        return sendToken(newUser, 201, res);
+      } else {
+        sendToken(user, 200, res)
+      }
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
