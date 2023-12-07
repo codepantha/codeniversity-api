@@ -214,6 +214,8 @@ export const updateAccessToken = catchAsyncErrors(
         }
       );
 
+      req.user = user;
+
       res.cookie('access_token', accessToken, accessTokenOptions);
       res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
@@ -254,11 +256,109 @@ export const socialAuth = catchAsyncErrors(
       const user = await User.findOne({ email });
 
       if (!user) {
-        const newUser = await User.create({ name, email, avatar })
+        const newUser = await User.create({ name, email, avatar });
         return sendToken(newUser, 201, res);
       } else {
-        sendToken(user, 200, res)
+        sendToken(user, 200, res);
       }
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// update user info
+interface IUpdateUserInfo {
+  name?: string;
+  email?: string;
+}
+
+export const updateUserInfo = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name, email } = req.body as IUpdateUserInfo;
+
+      // destructure _id as userId from req.user?._id
+      const { _id: userId } = req.user || {};
+
+      const user = await User.findById(userId);
+
+      // update the email
+      if (email && user) {
+        const emailInUse = await User.findOne({ email });
+
+        if (emailInUse) {
+          return next(new ErrorHandler('Email already in use', 409));
+        }
+
+        user.email = email;
+      }
+
+      // update the name
+      if (name && user) {
+        user.name = name;
+      }
+
+      await user?.save();
+
+      // update user on redis
+      await redis.set(userId, JSON.stringify(user));
+
+      res.status(200).json({
+        success: true,
+        user
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+interface IUpdatePassword {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export const updatePassword = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { oldPassword, newPassword } = req.body as IUpdatePassword;
+
+      if (!oldPassword || !newPassword) {
+        return next(
+          new ErrorHandler('Please enter old and new passwords', 422)
+        );
+      }
+
+      const user = await User.findById(req.user?._id).select('+password');
+
+      // if the user's account doesn't have a password,
+      // then it was created using social login
+      if (!user?.password) {
+        return next(
+          new ErrorHandler(
+            'You do not have a password to update. Sign in with social login',
+            409
+          )
+        );
+      }
+
+      // compare the old passwords
+      const passwordCorrect = await user.comparePassword(oldPassword);
+
+      if (!passwordCorrect) {
+        return next(new ErrorHandler('Incorrect old password', 409));
+      }
+
+      // update the new password on mongodb and redis
+      user.password = newPassword;
+      await user.save();
+      await redis.set(req.user?._id, JSON.stringify(user));
+
+      res.status(200).json({
+        success: true,
+        user
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
