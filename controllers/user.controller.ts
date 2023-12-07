@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import ejs from 'ejs';
+// import cloudinary from 'cloudinary';
 
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import User, { IUser } from '../models/user.model';
@@ -14,6 +15,7 @@ import {
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
 import { getUserById } from '../services/user.services';
+import { cloudinary } from '../server';
 
 interface IRegistrationBody {
   name: string;
@@ -359,6 +361,61 @@ export const updatePassword = catchAsyncErrors(
         success: true,
         user
       });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// Update profile pic
+interface IUpdateProfilePicture {
+  avatar: string;
+}
+
+export const updateProfilePicture = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { avatar } = req.body as IUpdateProfilePicture;
+
+      const userId = req.user?._id;
+
+      const user = await User.findById(userId);
+
+      if (avatar && user) {
+        const avatarPublicId = user.avatar.public_id;
+        // do this if the user has an avatar
+        if (avatarPublicId) {
+          // delete the old avatar image
+          cloudinary.uploader.destroy(avatarPublicId);
+
+          const uploadedAvatar = await cloudinary.uploader.upload(avatar, {
+            folder: 'avatars',
+            width: 150
+          });
+          user.avatar = {
+            public_id: uploadedAvatar.public_id,
+            url: uploadedAvatar.secure_url
+          };
+        } else {
+          const uploadedAvatar = await cloudinary.uploader.upload(avatar, {
+            folder: 'avatars',
+            width: 150
+          });
+          user.avatar = {
+            public_id: uploadedAvatar.public_id,
+            url: uploadedAvatar.secure_url
+          };
+        }
+      }
+
+      // update the user on mongodb and redis
+      await user?.save();
+      await redis.set(userId, JSON.stringify(user))
+
+      res.status(200).json({
+        success: true,
+        user
+      })
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
