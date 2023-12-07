@@ -3,6 +3,9 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
+import ErrorMiddleware from './middleware/error';
+import userRouter from './routes/user.routes';
+
 export const app = express();
 
 // body parser
@@ -16,6 +19,8 @@ app.use(
   })
 );
 
+app.use('/api/v1', userRouter)
+
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({
     success: true,
@@ -28,4 +33,6 @@ app.all('*', (req: Request, res: Response, next: NextFunction) => {
   const err = new Error(`Route ${req.originalUrl} does not exist.`) as any;
   err.statusCode = 404;
   next(err);
-})
+});
+
+app.use(ErrorMiddleware);
