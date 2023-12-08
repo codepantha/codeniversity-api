@@ -5,6 +5,7 @@ import ErrorHandler from '../utils/ErrorHandler';
 import { cloudinary } from '../server';
 import { createCourse } from '../services/course.service';
 import Course from '../models/course.model';
+import { redis } from '../utils/redis';
 
 export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -71,13 +72,26 @@ export const update = catchAsyncErrors(
 export const show = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const course = await Course.findById(req.params.id).select(
-        '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
-      );
+      const { id } = req.params;
 
-      if (!course) {
-        return next(new ErrorHandler('Course not found', 404));
+      const cachedData = await redis.get(id);
+
+      // if course isn't cached, fetch from mongodb and cache it
+      if (!cachedData) {
+        const course = await Course.findById(req.params.id).select(
+          '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+        );
+
+        await redis.set(id, JSON.stringify(course));
+
+        return res.status(200).json({
+          success: true,
+          course
+        });
       }
+
+      // return the cached course from redis
+      const course = JSON.parse(cachedData);
 
       res.status(200).json({
         success: true,
@@ -93,9 +107,23 @@ export const show = catchAsyncErrors(
 export const index = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const courses = await Course.find().select(
-        '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
-      );
+      const cachedData = await redis.get('allCourses');
+
+      if (!cachedData) {
+        const courses = await Course.find().select(
+          '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+        );
+
+        await redis.set('allCourses', JSON.stringify(courses));
+
+        return res.status(200).json({
+          success: true,
+          courses
+        });
+      }
+
+      const courses = JSON.parse(cachedData);
+
       res.status(200).json({
         success: true,
         courses
