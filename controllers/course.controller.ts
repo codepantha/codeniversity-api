@@ -78,11 +78,7 @@ export const show = catchAsyncErrors(
 
       // if course isn't cached, fetch from mongodb and cache it
       if (!cachedData) {
-        const course = await Course.findById(req.params.id).select(
-          '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
-        );
-
-        await redis.set(id, JSON.stringify(course));
+        const course = await fetchAndCacheCourse(id);
 
         return res.status(200).json({
           success: true,
@@ -110,11 +106,7 @@ export const index = catchAsyncErrors(
       const cachedData = await redis.get('allCourses');
 
       if (!cachedData) {
-        const courses = await Course.find().select(
-          '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
-        );
-
-        await redis.set('allCourses', JSON.stringify(courses));
+        const courses = await fetchAndCacheCourse();
 
         return res.status(200).json({
           success: true,
@@ -133,3 +125,23 @@ export const index = catchAsyncErrors(
     }
   }
 );
+
+async function fetchAndCacheCourse(id: string = '') {
+  if (id) {
+    const course = await Course.findById(id).select(
+      '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+    );
+
+    await redis.set(id, JSON.stringify(course));
+
+    return course;
+  }
+
+  const courses = await Course.find().select(
+    '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+  );
+
+  await redis.set('allCourses', JSON.stringify(courses));
+
+  return courses;
+}
