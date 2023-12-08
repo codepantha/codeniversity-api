@@ -6,7 +6,7 @@ import { cloudinary } from '../server';
 import { createCourse } from '../services/course.service';
 import Course from '../models/course.model';
 
-export const uploadCourse = catchAsyncErrors(
+export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = req.body;
@@ -28,10 +28,10 @@ export const uploadCourse = catchAsyncErrors(
   }
 );
 
-export const editCourse = catchAsyncErrors(
+export const update = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = req.body
+      const data = req.body;
       const { id } = req.params;
 
       const thumbnail = data?.thumbnail || '';
@@ -60,6 +60,45 @@ export const editCourse = catchAsyncErrors(
       res.status(200).json({
         success: true,
         course
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
+// get single course
+export const show = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const course = await Course.findById(req.params.id).select(
+        '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+      );
+
+      if (!course) {
+        return next(new ErrorHandler('Course not found', 404));
+      }
+
+      res.status(200).json({
+        success: true,
+        course
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  }
+);
+
+// get all courses
+export const index = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const courses = await Course.find().select(
+        '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
+      );
+      res.status(200).json({
+        success: true,
+        courses
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
