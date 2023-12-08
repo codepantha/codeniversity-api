@@ -7,6 +7,11 @@ import { createCourse } from '../services/course.service';
 import Course from '../models/course.model';
 import { redis } from '../utils/redis';
 
+/**
+ * @description Create a new course
+ * @route POST /courses
+ * @access Private (admin)
+ */
 export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,6 +34,11 @@ export const create = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Update an existing course
+ * @route PUT /courses/:id
+ * @access Private (admin)
+ */
 export const update = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -68,7 +78,11 @@ export const update = catchAsyncErrors(
   }
 );
 
-// get single course
+/**
+ * @description Get details of a single course
+ * @route GET /courses/:id
+ * @access Public
+ */
 export const show = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -99,7 +113,11 @@ export const show = catchAsyncErrors(
   }
 );
 
-// get all courses
+/**
+ * @description Get details of all courses
+ * @route GET /courses
+ * @access Public
+ */
 export const index = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -126,6 +144,11 @@ export const index = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Fetches course data from MongoDB and caches it in Redis based on the provided ID or caches all courses if no ID is provided.
+ * @param {string} id - The ID of the specific course to fetch. If not provided, fetches all courses.
+ * @returns {Promise<Course | Course[]>} - Fetched course or courses
+ */
 async function fetchAndCacheCourse(id: string = '') {
   if (id) {
     const course = await Course.findById(id).select(
