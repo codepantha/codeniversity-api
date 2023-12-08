@@ -168,3 +168,43 @@ async function fetchAndCacheCourse(id: string = '') {
 
   return courses;
 }
+
+/**
+ * @description Get content of a course bought by the authenticated user.
+ * @route GET /courses/:id/content
+ * @access Private
+ */
+export const getCourseBoughtByUser = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const courses = req.user?.courses;
+      const courseId = req.params.id;
+
+      // check if the courseId is in the user's bought courses
+      const userHasBoughtCourse = courses?.find(
+        (course) => course.courseId === courseId
+      );
+
+      if (!userHasBoughtCourse) {
+        return next(
+          new ErrorHandler('You do not have access to this course', 403)
+        );
+      }
+
+      const course = await Course.findById(courseId);
+      const content = course?.courseData;
+
+      res.status(200).json({
+        success: true,
+        content
+      });
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error while processing getCourseBoughtByUser: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
