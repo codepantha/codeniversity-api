@@ -6,7 +6,8 @@ import {
   show,
   index,
   getCourseBoughtByUser,
-  addQuestion
+  addQuestion,
+  addAnswer
 } from '../controllers/course.controller';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.get('/', index);
 router.put('/:id', isAuthenticated, authorizedRoles('admin'), update);
 router.get('/:id', show);
 router.get('/:id/content', isAuthenticated, getCourseBoughtByUser);
-router.post('/:id/questions', isAuthenticated, addQuestion);
+router.put('/:id/questions', isAuthenticated, addQuestion);
+router.put('/:courseId/questions/:questionId/answers', isAuthenticated, addAnswer);
 
 export default router;

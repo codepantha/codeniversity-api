@@ -6,14 +6,15 @@ import { cloudinary } from '../server';
 import { createCourse } from '../services/course.service';
 import Course from '../models/course.model';
 import { redis } from '../utils/redis';
+import sendMail from '../utils/sendMail';
 
 /**
  * @description Create a new course
  * @route POST /courses
  * @access Private (admin)
- * 
+ *
  * @param {Object} body - The request body containing course details
- * 
+ *
  * @returns {Object} Response JSON with the created course details
  * @throws {Error} If an error occurs during course creation or thumbnail upload
  */
@@ -43,10 +44,10 @@ export const create = catchAsyncErrors(
  * @description Update an existing course
  * @route PUT /courses/:id
  * @access Private (admin)
- * 
+ *
  * @param {Object} data - The request body containing updated course details
  * @param {string} id - The id of the course to be updated
- * 
+ *
  * @returns {Object} Response JSON with the updated course details
  * @throws {Error} If an error occurs during course update, thumbnail deletion, or thumbnail upload
  */
@@ -93,9 +94,9 @@ export const update = catchAsyncErrors(
  * @description Get details of a specific course
  * @route GET /courses/:id
  * @access Public
- * 
+ *
  * @param {string} id - The id of the course to be retrieved
- * 
+ *
  * @returns {Object} Response JSON with the course details
  * @throws {Error} If an error occurs during course retrieval from cache, MongoDB, or JSON parsing
  */
@@ -192,9 +193,9 @@ async function fetchAndCacheCourse(id: string = '') {
  * @description Get content of a course bought by the authenticated user
  * @route GET /courses/:id/content
  * @access Private
- * 
+ *
  * @param {string} id - The ID of the course to retrive, provided as a route parameter
- * 
+ *
  * @returns {Object} Response JSON with the content details of the bought course
  * @throws {Error} If the course is not found, the user hasn't bought the course, or an internal server error occurs
  */
@@ -240,7 +241,7 @@ interface IAddQuestionData {
 
 /**
  * @description Add a new question to a specific course content
- * @route POST /courses/:id/questions
+ * @route PUT /courses/:id/questions
  * @access Private (user)
  *
  * @param {string} id - The ID of the course to which the question will be added
@@ -291,3 +292,95 @@ export const addQuestion = catchAsyncErrors(
     }
   }
 );
+
+interface IAddAnswerData {
+  answer: string;
+  contentId: string;
+}
+
+/**
+ * @description Add a new answer to a specific question in a course
+ * @route PUT /courses/:courseId/questions/:questionId/answers
+ * @access Private
+ *
+ * @param {string} courseId - The ID of the course containing the question
+ * @param {string} questionId - The ID of the question to which the answer will be added
+ * @param {Object} body - The request body containing answer details
+ * @param {string} body.answer - The answer text
+ * @param {string} body.contentId - The ID of the course content to which the question belongs
+ *
+ * @returns {Object} Response JSON with the updated course details
+ * @throws {Error} If course, course content, or question is not found, or an internal server error occurs
+ */
+
+export const addAnswer = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId, questionId } = req.params;
+      const { answer, contentId }: IAddAnswerData = req.body;
+
+      const course = await Course.findById(courseId);
+
+      const courseContent = course?.courseData.find((item: any) =>
+        item._id.equals(contentId)
+      );
+
+      if (!courseContent)
+        return next(new ErrorHandler('Course content not found.', 404));
+
+      const question = courseContent.questions.find((question: any) =>
+        question._id.equals(questionId)
+      );
+
+      if (!question) return next(new ErrorHandler('Question not found', 404));
+
+      // Create a new answer object to save to the questionReplies array
+      const newAnswer: any = {
+        user: req.user,
+        answer
+      };
+
+      question.questionReplies.push(newAnswer);
+
+      await course?.save();
+
+      handleNotifications(req, question, courseContent)
+
+      res.status(201).json({
+        success: true,
+        course
+      })
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error while processing addAnswer: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
+
+const handleNotifications = (req: Request, question: any, courseContent: any) => {
+  // if the logged-in-user is the question's author
+  if (req.user?._id === question.user._id) {
+    // TODO: notify the admin of a new question
+  } else {
+    // send a notification of a new reply
+    const data = {
+      name: question.user.name,
+      title: courseContent.title
+    };
+
+    try {
+      sendMail({
+        email: question.user.email,
+        subject: 'New Reply to Your Question',
+        template: 'question-reply.ejs',
+        data
+      });
+    } catch (error: any) {
+      throw new ErrorHandler(`Error sending email ${error.message}`, 500);
+    }
+  }
+}
