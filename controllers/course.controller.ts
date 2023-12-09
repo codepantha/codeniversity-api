@@ -11,6 +11,11 @@ import { redis } from '../utils/redis';
  * @description Create a new course
  * @route POST /courses
  * @access Private (admin)
+ * 
+ * @param {Object} body - The request body containing course details
+ * 
+ * @returns {Object} Response JSON with the created course details
+ * @throws {Error} If an error occurs during course creation or thumbnail upload
  */
 export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -38,6 +43,12 @@ export const create = catchAsyncErrors(
  * @description Update an existing course
  * @route PUT /courses/:id
  * @access Private (admin)
+ * 
+ * @param {Object} data - The request body containing updated course details
+ * @param {string} id - The id of the course to be updated
+ * 
+ * @returns {Object} Response JSON with the updated course details
+ * @throws {Error} If an error occurs during course update, thumbnail deletion, or thumbnail upload
  */
 export const update = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -79,9 +90,14 @@ export const update = catchAsyncErrors(
 );
 
 /**
- * @description Get details of a single course
+ * @description Get details of a specific course
  * @route GET /courses/:id
  * @access Public
+ * 
+ * @param {string} id - The id of the course to be retrieved
+ * 
+ * @returns {Object} Response JSON with the course details
+ * @throws {Error} If an error occurs during course retrieval from cache, MongoDB, or JSON parsing
  */
 export const show = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -117,6 +133,9 @@ export const show = catchAsyncErrors(
  * @description Get details of all courses
  * @route GET /courses
  * @access Public
+ *
+ * @returns {Object} Response JSON with the list of all courses
+ * @throws {Error} If an error occurs during course retrieval from cache, MongoDB, or JSON parsing
  */
 export const index = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -170,9 +189,14 @@ async function fetchAndCacheCourse(id: string = '') {
 }
 
 /**
- * @description Get content of a course bought by the authenticated user.
+ * @description Get content of a course bought by the authenticated user
  * @route GET /courses/:id/content
  * @access Private
+ * 
+ * @param {string} id - The ID of the course to retrive, provided as a route parameter
+ * 
+ * @returns {Object} Response JSON with the content details of the bought course
+ * @throws {Error} If the course is not found, the user hasn't bought the course, or an internal server error occurs
  */
 export const getCourseBoughtByUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
