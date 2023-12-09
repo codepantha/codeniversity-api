@@ -208,3 +208,62 @@ export const getCourseBoughtByUser = catchAsyncErrors(
     }
   }
 );
+
+interface IAddQuestionData {
+  question: string;
+  contentId: string;
+}
+
+/**
+ * @description Add a new question to a specific course content
+ * @route POST /courses/:id/questions
+ * @access Private (user)
+ *
+ * @param {string} id - The ID of the course to which the question will be added
+ * @param {Object} body - The request body containing question details
+ * @param {string} body.question - The question text
+ * @param {string} body.contentId - The ID of the course content to which the question will be added
+ *
+ * @returns {Object} Response JSON with the updated course details
+ * @throws {Error} If course or course content is not found, or an internal server error occurs
+ */
+export const addQuestion = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id: courseId } = req.params;
+      const { question, contentId }: IAddQuestionData = req.body;
+
+      const course = await Course.findById(courseId);
+
+      const courseContent = course?.courseData.find((item: any) => {
+        return item._id.equals(contentId);
+      });
+
+      if (!courseContent)
+        return next(new ErrorHandler('Course content not found.', 404));
+
+      // create a new question object and add to our course content
+      const newQuestion: any = {
+        user: req.user,
+        question,
+        questionReplies: []
+      };
+
+      courseContent.questions.push(newQuestion);
+
+      await course?.save();
+
+      res.status(201).json({
+        success: true,
+        course
+      });
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error while processing addQuestion: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
