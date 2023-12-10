@@ -241,7 +241,7 @@ interface IAddQuestionData {
 
 /**
  * @description Add a new question to a specific course content
- * @route PUT /courses/:id/questions
+ * @route POST /courses/:id/questions
  * @access Private (user)
  *
  * @param {string} id - The ID of the course to which the question will be added
@@ -300,7 +300,7 @@ interface IAddAnswerData {
 
 /**
  * @description Add a new answer to a specific question in a course
- * @route PUT /courses/:courseId/questions/:questionId/answers
+ * @route POST /courses/:courseId/questions/:questionId/answers
  * @access Private
  *
  * @param {string} courseId - The ID of the course containing the question
@@ -344,12 +344,12 @@ export const addAnswer = catchAsyncErrors(
 
       await course?.save();
 
-      handleNotifications(req, question, courseContent)
+      handleNotifications(req, question, courseContent);
 
       res.status(201).json({
         success: true,
         course
-      })
+      });
     } catch (error: any) {
       return next(
         new ErrorHandler(
@@ -361,7 +361,152 @@ export const addAnswer = catchAsyncErrors(
   }
 );
 
-const handleNotifications = (req: Request, question: any, courseContent: any) => {
+interface IAddReviewData {
+  review: string;
+  rating: number;
+  userId: string;
+}
+
+/**
+ * @description Add a new review to a specific course
+ * @route POST /api/courses/:id/reviews
+ * @access Private
+ *
+ * @param {string} id - The ID of the course to which the review will be added
+ * @param {Object} body - The request body containing review details
+ * @param {string} body.review - The review comment
+ * @param {number} body.rating - The numeric rating given by the user
+ *
+ * @returns {Object} Response JSON with the updated course details and success status
+ * @throws {Error} If user does not have access to the course, or an internal server error occurs
+ */
+export const addReview = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const coursesBoughtByUser = req.user?.courses;
+
+      const courseId = req.params.id;
+
+      // check if the user has bought the course
+      const userHasBoughtCourse = coursesBoughtByUser?.find(
+        (course: any) => course.courseId === courseId
+      );
+
+      if (!userHasBoughtCourse) {
+        return next(
+          new ErrorHandler('You do not have access to this course', 403)
+        );
+      }
+
+      const course = await Course.findById(courseId);
+
+      const { review, rating } = req.body as IAddReviewData;
+
+      // create a new review and push into the reviews array
+      const newReview: any = {
+        user: req.user,
+        rating,
+        comment: review
+      };
+
+      course?.reviews.push(newReview);
+
+      // calculate course ratings: totalRatings/num of ratings
+      const totalRatings: number =
+        course?.reviews.reduce((acc, review: any) => acc + review.rating, 0) ||
+        0;
+
+      if (course) {
+        course.ratings = totalRatings / course.reviews.length;
+      }
+
+      course?.save();
+
+      const notification = {
+        title: 'New Review Received',
+        message: `${req.user?.name} has given a review in ${course?.name}`
+      };
+
+      // TODO: Create notification
+
+      res.status(201).json({
+        success: true,
+        course
+      });
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error while processing addReview: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
+
+interface IReviewReplyBody {
+  comment: string;
+}
+/**
+ * @description Add a reply to a specific review in a course
+ * @route POST /api/courses/:courseId/reviews/:reviewId/replies
+ * @access Private('admin')
+ *
+ * @param {string} courseId - The ID of the course containing the review
+ * @param {string} reviewId - The ID of the review to which the reply will be added
+ * @param {Object} body - The request body containing the reply details
+ * @param {string} body.comment - The reply comment
+ *
+ * @returns {Object} Response JSON with the updated course details and success status
+ * @throws {Error} If course, review, or user is not found, or an internal server error occurs
+ */
+export const addRepliesToReview = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { courseId, reviewId } = req.params;
+      const { comment }: IReviewReplyBody = req.body;
+
+      const course = await Course.findById(courseId);
+
+      if (!course) return next(new ErrorHandler('Course not found', 404));
+
+      // find the review
+      const review = course.reviews.find((review) =>
+        review._id.equals(reviewId)
+      );
+
+      if (!review) return next(new ErrorHandler('Review not found', 404));
+
+      const reviewReply = {
+        user: req.user,
+        comment
+      };
+
+      // add the reply to the review
+      review.commentReplies?.push(reviewReply);
+
+      await course.save();
+
+      res.status(201).json({
+        success: true,
+        course
+      });
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error while processing addRepliesToReview: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
+
+const handleNotifications = (
+  req: Request,
+  question: any,
+  courseContent: any
+) => {
   // if the logged-in-user is the question's author
   if (req.user?._id === question.user._id) {
     // TODO: notify the admin of a new question
@@ -383,4 +528,4 @@ const handleNotifications = (req: Request, question: any, courseContent: any) =>
       throw new ErrorHandler(`Error sending email ${error.message}`, 500);
     }
   }
-}
+};
