@@ -14,7 +14,7 @@ import {
   sendToken
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
-import { getUserById } from '../services/user.services';
+import { getUserById } from '../services/user.service';
 import { cloudinary } from '../server';
 
 interface IRegistrationBody {
