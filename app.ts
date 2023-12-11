@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import ErrorMiddleware from './middleware/error';
 import userRouter from './routes/user.routes';
 import courseRouter from './routes/course.routes';
+import orderRouter from './routes/order.routes';
 
 export const app = express();
 
@@ -22,13 +23,7 @@ app.use(
 
 app.use('/api/v1', userRouter)
 app.use('/api/v1/courses', courseRouter)
-
-app.get('/test', (req: Request, res: Response, next: NextFunction) => {
-  res.status(200).json({
-    success: true,
-    message: 'API is working'
-  });
-});
+app.use('/api/v1/orders/', orderRouter)
 
 // unknown route middleware
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
