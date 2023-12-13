@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction} from 'express'
+import cron from 'node-cron';
 
 import catchAsyncErrors from '../middleware/catchAsyncErrors'
 import Notification from '../models/notification'
@@ -53,4 +54,11 @@ export const markAsRead = catchAsyncErrors(async (req: Request, res: Response, n
   } catch (error: any) {
     return next(new ErrorHandler(`Error processing markAsRead ${error.message}`, 500))
   }
+})
+
+// Schedule a daily cleanup task: -- only admin
+// Delete all 'read' notifications older than 30 days.
+cron.schedule('0 0 0 * * *', async () => {
+  const thirtyDaysAgo = new Date(Date.now() * 30 * 24 * 60 * 60 * 1000);
+  await Notification.deleteMany({ status: 'read', createdAt: { $lt: thirtyDaysAgo }})
 })
