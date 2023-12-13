@@ -9,7 +9,8 @@ import {
   addQuestion,
   addAnswer,
   addReview,
-  addRepliesToReview
+  addRepliesToReview,
+  fetchAllCourses
 } from '../controllers/course.controller';
 
 const router = Router();
@@ -17,6 +18,7 @@ const router = Router();
 router.post('/', isAuthenticated, authorizedRoles('admin'), create);
 
 router.get('/', index);
+router.get('/all', isAuthenticated, authorizedRoles('admin'), fetchAllCourses);
 
 router.put('/:id', isAuthenticated, authorizedRoles('admin'), update);
 router.get('/:id', show);

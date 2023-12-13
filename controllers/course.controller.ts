@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import ErrorHandler from '../utils/ErrorHandler';
 import { cloudinary } from '../server';
-import { createCourse } from '../services/course.service';
+import { createCourse, getAllCourses } from '../services/course.service';
 import Course from '../models/course.model';
 import { redis } from '../utils/redis';
 import sendMail from '../utils/sendMail';
@@ -540,3 +540,19 @@ const handleNotifications = async (
     }
   }
 };
+
+/**
+ * @description Get all courses
+ * @route GET /all
+ * @access Private (admin)
+ * 
+ * @returns {Object} Response JSON with the courses details and success status
+ * @throws {Error} If an internal server error occurs
+ */
+export const fetchAllCourses = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    getAllCourses(res);
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+  }
+})

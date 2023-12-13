@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { redis } from '../utils/redis';
+import User from '../models/user.model';
 
 export const getUserById = async (id: string, res: Response) => {
   const userJson = await redis.get(id);
@@ -12,3 +13,25 @@ export const getUserById = async (id: string, res: Response) => {
     });
   }
 };
+
+/**
+ * @description Get a list of users sorted by createdAt
+ * 
+ * @param {Object} res - Express Response object for sending the HTTP response
+ */
+export const getAllUsers = async (res: Response) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      nbHits: users.length,
+      users,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: `Error processing getAllUsers: ${error.message}`,
+    });
+  }
+}

@@ -4,9 +4,17 @@ import ErrorHandler from '../utils/ErrorHandler';
 import { IOrder } from '../models/order.model';
 import User from '../models/user.model';
 import Course from '../models/course.model';
-import { createNewOrder } from '../services/order.service';
+import { createNewOrder, getAllOrders } from '../services/order.service';
 import sendMail from '../utils/sendMail';
 import Notification from '../models/notification';
+
+export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await getAllOrders(res);
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing index function: ${error.message}`, 500))
+  }
+})
 
 export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
