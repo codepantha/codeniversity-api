@@ -14,24 +14,35 @@ import {
   sendToken
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
-import { getAllUsers, getUserById } from '../services/user.service';
+import {
+  getAllUsers,
+  getUserById,
+  updateUserRoleService
+} from '../services/user.service';
 import { cloudinary } from '../server';
 
 /**
  * @description Get all users sorted by createdAt
  * @route GET /users
  * @access Private (admin)
- * 
+ *
  * @returns {Object} JSON response with the list of users
  * @throws {Error} If an internal server error occurs during processing
  */
-export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await getAllUsers(res);
-  } catch (error: any) {
-    return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+export const index = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await getAllUsers(res);
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error processing index function ${error.message}`,
+          500
+        )
+      );
+    }
   }
-})
+);
 
 interface IRegistrationBody {
   name: string;
@@ -426,14 +437,31 @@ export const updateProfilePicture = catchAsyncErrors(
 
       // update the user on mongodb and redis
       await user?.save();
-      await redis.set(userId, JSON.stringify(user))
+      await redis.set(userId, JSON.stringify(user));
 
       res.status(200).json({
         success: true,
         user
-      })
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+export const updateUserRole = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, role } = req.body;
+
+      await updateUserRoleService(res, id, role);
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error processing update user role: ${error.message}`,
+          500
+        )
+      );
     }
   }
 );
