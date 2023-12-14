@@ -45,3 +45,14 @@ export const updateUserRoleService = async (res: Response, id: string, role: str
       user
     })
 }}
+
+export const deleteUserById = async (id: string) => {
+  const user = await User.findById(id);
+
+  if (!user) throw new ErrorHandler('User not found', 404)
+
+  await user.deleteOne();
+  await redis.del(id);
+}
+
+

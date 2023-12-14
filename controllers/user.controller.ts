@@ -15,6 +15,7 @@ import {
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
 import {
+  deleteUserById,
   getAllUsers,
   getUserById,
   updateUserRoleService
@@ -465,3 +466,18 @@ export const updateUserRole = catchAsyncErrors(
     }
   }
 );
+
+export const deleteUser = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    await deleteUserById(id);
+
+    res.status(204).json({
+      success: true,
+      message: 'User deleted successfully'
+    })
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing delete user: ${error.message}`, error.statusCode || 500));
+  }
+})
