@@ -3,10 +3,11 @@ import { Request, Response, NextFunction } from 'express';
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import ErrorHandler from '../utils/ErrorHandler';
 import { cloudinary } from '../server';
-import { createCourse } from '../services/course.service';
+import { createCourse, getAllCourses } from '../services/course.service';
 import Course from '../models/course.model';
 import { redis } from '../utils/redis';
 import sendMail from '../utils/sendMail';
+import Notification from '../models/notification';
 
 /**
  * @description Create a new course
@@ -276,6 +277,12 @@ export const addQuestion = catchAsyncErrors(
 
       courseContent.questions.push(newQuestion);
 
+      await Notification.create({
+        userId: req.user?._id,
+        title: 'New Question Received',
+        message: `A student just asked a question on "${courseContent.title}" in your "${course?.name}" course.`,
+      });
+
       await course?.save();
 
       res.status(201).json({
@@ -502,14 +509,18 @@ export const addRepliesToReview = catchAsyncErrors(
   }
 );
 
-const handleNotifications = (
+const handleNotifications = async (
   req: Request,
   question: any,
   courseContent: any
 ) => {
   // if the logged-in-user is the question's author
   if (req.user?._id === question.user._id) {
-    // TODO: notify the admin of a new question
+    // notify the admin of a new question
+    await Notification.create({
+      title: 'New Question Reply Recieved',
+      message: `You have a new reply in ${courseContent.title}`
+    })
   } else {
     // send a notification of a new reply
     const data = {
@@ -529,3 +540,19 @@ const handleNotifications = (
     }
   }
 };
+
+/**
+ * @description Get all courses
+ * @route GET /all
+ * @access Private (admin)
+ * 
+ * @returns {Object} Response JSON with the courses details and success status
+ * @throws {Error} If an internal server error occurs
+ */
+export const fetchAllCourses = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    getAllCourses(res);
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+  }
+})

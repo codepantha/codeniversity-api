@@ -20,3 +20,25 @@ export const createCourse = catchAsyncErrors(
     });
   }
 );
+
+/**
+ * @description Get a list of courses sorted by createdAt
+ * 
+ * @param {Object} res - Express Response object for sending the HTTP response
+ */
+export const getAllCourses = async (res: Response) => {
+  try {
+    const courses = await Course.find().sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      nbHits: courses.length,
+      courses,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: `Error processing getAllCourses: ${error.message}`,
+    });
+  }
+}

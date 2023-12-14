@@ -14,8 +14,24 @@ import {
   sendToken
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
-import { getUserById } from '../services/user.service';
+import { getAllUsers, getUserById } from '../services/user.service';
 import { cloudinary } from '../server';
+
+/**
+ * @description Get all users sorted by createdAt
+ * @route GET /users
+ * @access Private (admin)
+ * 
+ * @returns {Object} JSON response with the list of users
+ * @throws {Error} If an internal server error occurs during processing
+ */
+export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await getAllUsers(res);
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+  }
+})
 
 interface IRegistrationBody {
   name: string;
