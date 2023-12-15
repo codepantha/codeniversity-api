@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import ejs from 'ejs';
-// import cloudinary from 'cloudinary';
 
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import User, { IUser } from '../models/user.model';
@@ -14,12 +13,7 @@ import {
   sendToken
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
-import {
-  deleteUserById,
-  getAllUsers,
-  getUserById,
-  updateUserRoleService
-} from '../services/user.service';
+import UserService from '../services/user.service';
 import { cloudinary } from '../server';
 
 /**
@@ -33,7 +27,7 @@ import { cloudinary } from '../server';
 export const index = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await getAllUsers(res);
+      await UserService.getAllUsers(res);
     } catch (error: any) {
       return next(
         new ErrorHandler(
@@ -263,7 +257,7 @@ export const updateAccessToken = catchAsyncErrors(
 export const getUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      getUserById(req.user?._id, res);
+      UserService.getUserById(req.user?._id, res);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
@@ -455,7 +449,7 @@ export const updateUserRole = catchAsyncErrors(
     try {
       const { id, role } = req.body;
 
-      await updateUserRoleService(res, id, role);
+      await UserService.updateUserRole(res, id, role);
     } catch (error: any) {
       return next(
         new ErrorHandler(
@@ -471,7 +465,7 @@ export const deleteUser = catchAsyncErrors(async (req: Request, res: Response, n
   try {
     const { id } = req.params;
 
-    await deleteUserById(id);
+    await UserService.deleteUserById(id);
 
     res.status(204).json({
       success: true,
