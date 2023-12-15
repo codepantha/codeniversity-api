@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import ErrorHandler from '../utils/ErrorHandler';
 import { cloudinary } from '../server';
-import { createCourse, getAllCourses } from '../services/course.service';
+import { createCourse, deleteCourseById, getAllCourses } from '../services/course.service';
 import Course from '../models/course.model';
 import { redis } from '../utils/redis';
 import sendMail from '../utils/sendMail';
@@ -554,5 +554,20 @@ export const fetchAllCourses = catchAsyncErrors(async (req: Request, res: Respon
     getAllCourses(res);
   } catch (error: any) {
     return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+  }
+})
+
+export const destroy = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id;
+
+    await deleteCourseById(id);
+
+    res.status(204).json({
+      success: true,
+      message: 'Course deleted successfully'
+    })
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing destroy action: ${error.message}`, error.statusCode || 500))
   }
 })
