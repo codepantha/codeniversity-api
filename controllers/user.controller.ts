@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import ejs from 'ejs';
-// import cloudinary from 'cloudinary';
 
 import catchAsyncErrors from '../middleware/catchAsyncErrors';
 import User, { IUser } from '../models/user.model';
@@ -14,24 +13,31 @@ import {
   sendToken
 } from '../utils/jwt';
 import { redis } from '../utils/redis';
-import { getAllUsers, getUserById } from '../services/user.service';
+import UserService from '../services/user.service';
 import { cloudinary } from '../server';
 
 /**
  * @description Get all users sorted by createdAt
  * @route GET /users
  * @access Private (admin)
- * 
+ *
  * @returns {Object} JSON response with the list of users
  * @throws {Error} If an internal server error occurs during processing
  */
-export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await getAllUsers(res);
-  } catch (error: any) {
-    return next(new ErrorHandler(`Error processing index function ${error.message}`, 500))
+export const index = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await UserService.getAllUsers(res);
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error processing index function ${error.message}`,
+          500
+        )
+      );
+    }
   }
-})
+);
 
 interface IRegistrationBody {
   name: string;
@@ -251,7 +257,7 @@ export const updateAccessToken = catchAsyncErrors(
 export const getUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      getUserById(req.user?._id, res);
+      UserService.getUserById(req.user?._id, res);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
@@ -426,14 +432,46 @@ export const updateProfilePicture = catchAsyncErrors(
 
       // update the user on mongodb and redis
       await user?.save();
-      await redis.set(userId, JSON.stringify(user))
+      await redis.set(userId, JSON.stringify(user));
 
       res.status(200).json({
         success: true,
         user
-      })
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
   }
 );
+
+export const updateUserRole = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, role } = req.body;
+
+      await UserService.updateUserRole(res, id, role);
+    } catch (error: any) {
+      return next(
+        new ErrorHandler(
+          `Error processing update user role: ${error.message}`,
+          500
+        )
+      );
+    }
+  }
+);
+
+export const deleteUser = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    await UserService.deleteUserById(id);
+
+    res.status(204).json({
+      success: true,
+      message: 'User deleted successfully'
+    })
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing delete user: ${error.message}`, error.statusCode || 500));
+  }
+})

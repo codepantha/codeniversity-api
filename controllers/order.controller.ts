@@ -4,13 +4,13 @@ import ErrorHandler from '../utils/ErrorHandler';
 import { IOrder } from '../models/order.model';
 import User from '../models/user.model';
 import Course from '../models/course.model';
-import { createNewOrder, getAllOrders } from '../services/order.service';
 import sendMail from '../utils/sendMail';
 import Notification from '../models/notification';
+import OrderService from '../services/order.service';
 
 export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await getAllOrders(res);
+    await OrderService.getAllOrders(res);
   } catch (error: any) {
     return next(new ErrorHandler(`Error processing index function: ${error.message}`, 500))
   }
@@ -81,7 +81,7 @@ export const create = catchAsyncErrors(
 
       await course.save();
 
-      createNewOrder(data, res, next);
+      OrderService.createNewOrder(data, res, next);
     } catch (error: any) {
       return next(
         new ErrorHandler(`Error processing create order :${error.message}`, 500)
