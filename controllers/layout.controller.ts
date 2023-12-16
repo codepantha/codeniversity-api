@@ -5,19 +5,31 @@ import ErrorHandler from '../utils/ErrorHandler';
 import { cloudinary } from '../server';
 import Layout from '../models/layout.model';
 
+/**
+ * @description Create a new layout or update an existing one based on the specified type.
+ * @route POST /api/v1/layouts
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express Request object containing the HTTP request details.
+ * @param {Object} res - Express Response object for sending the HTTP response.
+ * @param {Object} next - Express NextFunction for error handling.
+ *
+ * @returns {Object} Response JSON indicating the success of the operation.
+ * @throws {ErrorHandler} If an error occurs during layout creation or update.
+ */
 export const createLayout = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { type }: { type: string } = req.body;
 
       // Validate request body
-      if (!type || !['Banner', 'FAQ', 'Categories'].includes(type))
+      if (!type || !['banner', 'faq', 'categories'].includes(type))
         return next(new ErrorHandler(`Invalid or missing layout type`, 422));
 
       // Find layout by type
       const layout: any = await Layout.findOne({ type });
 
-      if (type === 'Banner') {
+      if (type === 'banner') {
         const { image, title, subtitle } = req.body;
 
         if (layout) {
@@ -42,12 +54,13 @@ export const createLayout = catchAsyncErrors(
         } else await Layout.create({ type: 'Banner', banner });
       }
 
-      if (type === 'FAQ' || type === 'Categories') {
+      if (type === 'faq' || type === 'categories') {
         const { data } = req.body;
 
         if (layout) {
-          layout[type.toLowerCase()] = [...layout[type.toLowerCase()], ...data];
-        } else await Layout.create({ type, [type.toLowerCase()]: data });
+          // append new data to the existing array for the specified type e.g faq, categories, banner
+          layout[type] = [...layout[type], ...data];
+        } else await Layout.create({ type, [type]: data });
       }
 
       await layout.save();
@@ -66,3 +79,33 @@ export const createLayout = catchAsyncErrors(
     }
   }
 );
+
+/**
+ * @description Retrieve a layout based on the specified type from the database.
+ * @route GET /api/v1/layouts?type={type}
+ * @access Public
+ *
+ * @param {Object} req - Express Request object.
+ * @param {Object} res - Express Response object.
+ * @param {Object} next - Express NextFunction for error handling.
+ *
+ * @returns {Object} Response JSON with the retrieved layout details.
+ * @throws {ErrorHandler} If an error occurs during the retrieval process.
+ */
+interface QueryParams {
+  type: string;
+}
+
+export const getLayoutByType = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { type }: QueryParams = req.query as any;
+    const layout = await Layout.findOne({ type: type.toLowerCase() });
+
+    res.status(200).json({
+      success: true,
+      layout
+    });
+  } catch (error: any) {
+    return next(new ErrorHandler(`Error processing get layout by type: ${error.message}`, error.statusCode || 500));
+  }
+});
