@@ -20,6 +20,10 @@ export const createLayout = catchAsyncErrors(
       if (type === 'Banner') {
         const { image, title, subtitle } = req.body;
 
+        if (layout) {
+          await cloudinary.uploader.destroy(layout.banner.image.public_id)
+        }
+
         const uploadedImage = await cloudinary.uploader.upload(image, {
           folder: 'layout'
         });
