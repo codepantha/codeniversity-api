@@ -9,6 +9,7 @@ import courseRouter from './routes/course.routes';
 import orderRouter from './routes/order.routes';
 import notificationRouter from './routes/notification.routes';
 import analyticsRouter from './routes/analytics.routes';
+import layoutRouter from './routes/layout.routes';
 
 export const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/v1/courses', courseRouter)
 app.use('/api/v1/orders/', orderRouter)
 app.use('/api/v1/notifications', notificationRouter);
 app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/layouts', layoutRouter);
 
 // unknown route middleware
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
