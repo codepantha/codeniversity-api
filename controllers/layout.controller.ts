@@ -8,13 +8,14 @@ import Layout from '../models/layout.model';
 export const createLayout = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { type } = req.body;
+      const { type }: { type: string } = req.body;
 
-      const typeExists = await Layout.find({ type });
-      let layout: any;
-      if (typeExists) {
-        layout = await Layout.findOne({ type });
-      }
+      // Validate request body
+      if (!type || !['Banner', 'FAQ', 'Categories'].includes(type))
+        return next(new ErrorHandler(`Invalid or missing layout type`, 422));
+
+      // Find layout by type
+      const layout: any = await Layout.findOne({ type });
 
       if (type === 'Banner') {
         const { image, title, subtitle } = req.body;
@@ -32,28 +33,20 @@ export const createLayout = catchAsyncErrors(
           subtitle
         };
 
-        if (typeExists) {
+        if (layout) {
           layout.banner = banner;
-          await layout.save();
         } else await Layout.create({ type: 'Banner', banner });
       }
 
-      if (type === 'FAQ') {
-        const { faq } = req.body;
+      if (type === 'FAQ' || type === 'Categories') {
+        const { data } = req.body;
 
-        if (typeExists) {
-          layout.faq = [...layout.faq, ...faq];
-          await layout.save();
-        } else await Layout.create({ type: 'FAQ', faq });
+        if (layout) {
+          layout[type.toLowerCase()] = [...layout[type.toLowerCase()], ...data];
+        } else await Layout.create({ type, [type.toLowerCase()]: data });
       }
 
-      if (type === 'Categories') {
-        const { categories } = req.body;
-        if (typeExists) {
-          layout.categories = [...layout.categories, ...categories];
-          await layout.save();
-        } else await Layout.create({ type: 'Categories', categories });
-      }
+      await layout.save();
 
       res.status(201).json({
         success: true,
