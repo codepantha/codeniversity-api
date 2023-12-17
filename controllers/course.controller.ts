@@ -176,7 +176,7 @@ async function fetchAndCacheCourse(id: string = '') {
       '-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links'
     );
 
-    await redis.set(id, JSON.stringify(course));
+    await redis.set(id, JSON.stringify(course), 'EX', 259200); // 3 days
 
     return course;
   }
