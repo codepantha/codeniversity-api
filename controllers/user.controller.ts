@@ -647,6 +647,21 @@ export const updateUserRole = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Delete user by ID
+ * @route DELETE /users/:id
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the delete user request fails (HTTP status code 500)
+ *
+ * @returns {Object} JSON response indicating successful user deletion
+ * - success (boolean): Indicates if the deletion was successful
+ * - message (string): Informational message about the deletion
+ */
 export const deleteUser = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
