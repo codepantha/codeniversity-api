@@ -193,6 +193,22 @@ interface ILoginRequest {
   password: string;
 }
 
+/**
+ * @description Authenticate and log in a user
+ * @route POST /login
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If email or password is missing (HTTP status code 400)
+ * @throws {Error} If the provided email is not associated with any user (HTTP status code 401)
+ * @throws {Error} If the provided password is incorrect (HTTP status code 401)
+ * @throws {Error} If an error occurs during the login process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with authentication token if login is successful
+ */
 export const loginUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -218,6 +234,21 @@ export const loginUser = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Log out a user by clearing authentication cookies and removing data from Redis
+ * @route POST /logout
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during the logout process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful logout
+ * - success (boolean): Indicates if the logout was successful
+ * - message (string): Confirmation message
+ */
 export const logoutUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
