@@ -544,6 +544,27 @@ interface IUpdateProfilePicture {
   avatar: string;
 }
 
+/**
+ * @description Update user profile picture
+ * @route PUT /update-user-avatar
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during avatar upload or update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful profile picture update
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information including the new profile picture details
+ *   - _id (string): User's unique identifier
+ *   - name (string): User's name
+ *   - email (string): User's email
+ *   - avatar (Object): Updated avatar information
+ *     - public_id (string): Public identifier for the avatar image
+ *     - url (string): URL of the avatar image
+ */
 export const updateProfilePicture = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -594,6 +615,21 @@ export const updateProfilePicture = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Update user role by ID
+ * @route PUT /update-user-role
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the update user role request fails (HTTP status code 500)
+ *
+ * @returns {Object} JSON response indicating successful user role update
+ * - success (boolean): Indicates if the update was successful
+ * - message (string): Informational message about the update
+ */
 export const updateUserRole = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
