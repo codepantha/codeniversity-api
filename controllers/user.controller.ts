@@ -236,7 +236,7 @@ export const loginUser = catchAsyncErrors(
 
 /**
  * @description Log out a user by clearing authentication cookies and removing data from Redis
- * @route POST /logout
+ * @route GET /logout
  * @access Private
  *
  * @param {Object} req - Express request object
@@ -269,7 +269,23 @@ export const logoutUser = catchAsyncErrors(
   }
 );
 
-// update access token
+/**
+ * @description Refresh access token using a valid refresh token
+ * @route POST /refresh-token
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the provided refresh token is invalid or expired (HTTP status code 400)
+ * @throws {Error} If the user session is not found in Redis (HTTP status code 401)
+ * @throws {Error} If an error occurs during the token refresh process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with the refreshed access token and new refresh token
+ * - status (string): Indicates the success status ('success')
+ * - refreshToken (string): The newly generated refresh token
+ */
 export const updateAccessToken = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
