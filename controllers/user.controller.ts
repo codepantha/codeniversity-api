@@ -337,7 +337,20 @@ export const updateAccessToken = catchAsyncErrors(
   }
 );
 
-// get logged in user info
+/**
+ * @description Get user information based on authenticated user's ID
+ * @route GET /me
+ * @access Private
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * 
+ * @throws {Error} If an error occurs while retrieving user information (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with user information
+ * 
+ */
 export const getUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -355,6 +368,19 @@ interface ISocialAuthBody {
   avatar: string;
 }
 
+/**
+ * @description Authenticate user through social media (Google, Facebook, etc.)
+ * @route POST /social-auth
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during social authentication or token sending (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with authentication token if authentication is successful
+ */
 export const socialAuth = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
