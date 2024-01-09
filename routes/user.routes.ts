@@ -35,6 +35,11 @@ router.put(
   authorizedRoles('admin'),
   updateUserRole
 );
-router.delete('/users/:id', isAuthenticated, authorizedRoles('admin'), deleteUser);
+router.delete(
+  '/users/:id',
+  isAuthenticated,
+  authorizedRoles('admin'),
+  deleteUser
+);
 
 export default router;

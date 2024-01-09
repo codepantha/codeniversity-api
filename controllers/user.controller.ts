@@ -46,6 +46,22 @@ interface IRegistrationBody {
   avatar?: string;
 }
 
+/**
+ * @description Register a new user
+ * @route POST /register
+ * @access Public
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express request object
+ * @param {Function} next - Express next middleware function
+ * @throws {Error} If the provided email already exists (HTTP status code 409)
+ * @throws {Error} If an error occurs during user registration or email sending (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating the success of the registration process
+ * - success (boolean): Indicates if the registration was successful
+ * - message (string): Message instructing the user to check their email for activation
+ * - activationToken (string): Token for activating the user's account
+ */
 export const registerUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -117,6 +133,27 @@ interface IActivationRequest {
   activation_token: string;
   activation_code: string;
 }
+
+/**
+ * @description Activate a user account using the provided activation token and code
+ * @route POST /activate-user
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the activation code is invalid (HTTP status code 401)
+ * @throws {Error} If the provided email already exists (HTTP status code 409)
+ * @throws {Error} If an error occurs during user activation or database creation (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating the success of the user activation
+ * - success (boolean): Indicates if the activation was successful
+ * - user (Object): Information about the newly activated user (if successful)
+ *   - name (string): User's name
+ *   - email (string): User's email
+ *   - password (string): User's password
+ */
 
 export const activateUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
