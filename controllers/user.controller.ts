@@ -407,6 +407,25 @@ interface IUpdateUserInfo {
   email?: string;
 }
 
+/**
+ * @description Update user information such as name and email
+ * @route PUT /update-user-info
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the provided email is already in use (HTTP status code 409)
+ * @throws {Error} If an error occurs during user information update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with the updated user information
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information
+ *   - _id (string): User's unique identifier
+ *   - name (string): Updated user's name
+ *   - email (string): Updated user's email
+ */
 export const updateUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -453,6 +472,27 @@ interface IUpdatePassword {
   newPassword: string;
 }
 
+/**
+ * @description Update user password
+ * @route PUT /update-password
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If old or new passwords are missing (HTTP status code 422)
+ * @throws {Error} If the user's account doesn't have a password (HTTP status code 409)
+ * @throws {Error} If the provided old password is incorrect (HTTP status code 409)
+ * @throws {Error} If an error occurs during password update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful password update
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information
+ *   - _id (string): User's unique identifier
+ *   - name (string): User's name
+ *   - email (string): User's email
+ */
 export const updatePassword = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
