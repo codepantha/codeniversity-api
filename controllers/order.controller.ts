@@ -8,6 +8,19 @@ import sendMail from '../utils/sendMail';
 import Notification from '../models/notification';
 import OrderService from '../services/order.service';
 
+/**
+ * @description Get all orders
+ * @route GET /orders
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the request to get all orders fails (HTTP status code 500)
+ *
+ * @returns {Object} JSON response with the list of orders
+ */
 export const index = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
   try {
     await OrderService.getAllOrders(res);
@@ -16,6 +29,21 @@ export const index = catchAsyncErrors(async (req: Request, res: Response, next: 
   }
 })
 
+/**
+ * @description Create a new order for a course
+ * @route POST /orders
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the user has already purchased the course (HTTP status code 409)
+ * @throws {Error} If the specified course does not exist (HTTP status code 404)
+ * @throws {Error} If an error occurs during order creation or processing (HTTP status code 500)
+ *
+ * @returns {Object} JSON response with information about the created order
+ */
 export const create = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {

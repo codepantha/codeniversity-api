@@ -46,6 +46,22 @@ interface IRegistrationBody {
   avatar?: string;
 }
 
+/**
+ * @description Register a new user
+ * @route POST /register
+ * @access Public
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express request object
+ * @param {Function} next - Express next middleware function
+ * @throws {Error} If the provided email already exists (HTTP status code 409)
+ * @throws {Error} If an error occurs during user registration or email sending (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating the success of the registration process
+ * - success (boolean): Indicates if the registration was successful
+ * - message (string): Message instructing the user to check their email for activation
+ * - activationToken (string): Token for activating the user's account
+ */
 export const registerUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -118,6 +134,27 @@ interface IActivationRequest {
   activation_code: string;
 }
 
+/**
+ * @description Activate a user account using the provided activation token and code
+ * @route POST /activate-user
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the activation code is invalid (HTTP status code 401)
+ * @throws {Error} If the provided email already exists (HTTP status code 409)
+ * @throws {Error} If an error occurs during user activation or database creation (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating the success of the user activation
+ * - success (boolean): Indicates if the activation was successful
+ * - user (Object): Information about the newly activated user (if successful)
+ *   - name (string): User's name
+ *   - email (string): User's email
+ *   - password (string): User's password
+ */
+
 export const activateUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -156,6 +193,22 @@ interface ILoginRequest {
   password: string;
 }
 
+/**
+ * @description Authenticate and log in a user
+ * @route POST /login
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If email or password is missing (HTTP status code 400)
+ * @throws {Error} If the provided email is not associated with any user (HTTP status code 401)
+ * @throws {Error} If the provided password is incorrect (HTTP status code 401)
+ * @throws {Error} If an error occurs during the login process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with authentication token if login is successful
+ */
 export const loginUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -181,6 +234,21 @@ export const loginUser = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Log out a user by clearing authentication cookies and removing data from Redis
+ * @route GET /logout
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during the logout process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful logout
+ * - success (boolean): Indicates if the logout was successful
+ * - message (string): Confirmation message
+ */
 export const logoutUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -201,7 +269,23 @@ export const logoutUser = catchAsyncErrors(
   }
 );
 
-// update access token
+/**
+ * @description Refresh access token using a valid refresh token
+ * @route POST /refresh-token
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the provided refresh token is invalid or expired (HTTP status code 400)
+ * @throws {Error} If the user session is not found in Redis (HTTP status code 401)
+ * @throws {Error} If an error occurs during the token refresh process (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with the refreshed access token and new refresh token
+ * - status (string): Indicates the success status ('success')
+ * - refreshToken (string): The newly generated refresh token
+ */
 export const updateAccessToken = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -253,7 +337,20 @@ export const updateAccessToken = catchAsyncErrors(
   }
 );
 
-// get logged in user info
+/**
+ * @description Get user information based on authenticated user's ID
+ * @route GET /me
+ * @access Private
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * 
+ * @throws {Error} If an error occurs while retrieving user information (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with user information
+ * 
+ */
 export const getUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -271,6 +368,19 @@ interface ISocialAuthBody {
   avatar: string;
 }
 
+/**
+ * @description Authenticate user through social media (Google, Facebook, etc.)
+ * @route POST /social-auth
+ * @access Public
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during social authentication or token sending (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with authentication token if authentication is successful
+ */
 export const socialAuth = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -297,6 +407,25 @@ interface IUpdateUserInfo {
   email?: string;
 }
 
+/**
+ * @description Update user information such as name and email
+ * @route PUT /update-user-info
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the provided email is already in use (HTTP status code 409)
+ * @throws {Error} If an error occurs during user information update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response with the updated user information
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information
+ *   - _id (string): User's unique identifier
+ *   - name (string): Updated user's name
+ *   - email (string): Updated user's email
+ */
 export const updateUserInfo = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -343,6 +472,27 @@ interface IUpdatePassword {
   newPassword: string;
 }
 
+/**
+ * @description Update user password
+ * @route PUT /update-password
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If old or new passwords are missing (HTTP status code 422)
+ * @throws {Error} If the user's account doesn't have a password (HTTP status code 409)
+ * @throws {Error} If the provided old password is incorrect (HTTP status code 409)
+ * @throws {Error} If an error occurs during password update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful password update
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information
+ *   - _id (string): User's unique identifier
+ *   - name (string): User's name
+ *   - email (string): User's email
+ */
 export const updatePassword = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -394,6 +544,27 @@ interface IUpdateProfilePicture {
   avatar: string;
 }
 
+/**
+ * @description Update user profile picture
+ * @route PUT /update-user-avatar
+ * @access Private
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If an error occurs during avatar upload or update (HTTP status code 400)
+ *
+ * @returns {Object} JSON response indicating successful profile picture update
+ * - success (boolean): Indicates if the update was successful
+ * - user (Object): Updated user information including the new profile picture details
+ *   - _id (string): User's unique identifier
+ *   - name (string): User's name
+ *   - email (string): User's email
+ *   - avatar (Object): Updated avatar information
+ *     - public_id (string): Public identifier for the avatar image
+ *     - url (string): URL of the avatar image
+ */
 export const updateProfilePicture = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -444,6 +615,21 @@ export const updateProfilePicture = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Update user role by ID
+ * @route PUT /update-user-role
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the update user role request fails (HTTP status code 500)
+ *
+ * @returns {Object} JSON response indicating successful user role update
+ * - success (boolean): Indicates if the update was successful
+ * - message (string): Informational message about the update
+ */
 export const updateUserRole = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -461,6 +647,21 @@ export const updateUserRole = catchAsyncErrors(
   }
 );
 
+/**
+ * @description Delete user by ID
+ * @route DELETE /users/:id
+ * @access Private (admin)
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ *
+ * @throws {Error} If the delete user request fails (HTTP status code 500)
+ *
+ * @returns {Object} JSON response indicating successful user deletion
+ * - success (boolean): Indicates if the deletion was successful
+ * - message (string): Informational message about the deletion
+ */
 export const deleteUser = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
